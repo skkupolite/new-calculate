@@ -295,13 +295,82 @@
   }
 
   @media (max-width: 700px) {
-    .sidebar { width: 60px; }
-    .sidebar-logo, .sidebar-section-label, .nav-item span { display: none; }
-    .nav-item { justify-content: center; padding: 12px; }
-    .main { margin-left: 60px; padding: 24px 16px; }
-    .settle-layout { grid-template-columns: 1fr; }
-    .record-body { grid-template-columns: 1fr; gap: 12px; }
-    .summary-grid { grid-template-columns: 1fr 1fr; }
+    /* ── 사이드바: 하단 고정 탭바로 변경 ── */
+    .sidebar {
+      width: 100% !important;
+      height: 60px; min-height: unset;
+      top: auto; bottom: 0; left: 0; right: 0;
+      flex-direction: row;
+      padding: 0;
+      border-right: none;
+      border-top: 1px solid var(--border);
+      z-index: 100;
+    }
+    .sidebar-logo, .sidebar-section-label { display: none; }
+    .sidebar nav {
+      display: flex; flex-direction: row;
+      width: 100%; flex: 1;
+    }
+    .nav-item {
+      flex: 1; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 8px 4px; gap: 3px;
+      font-size: 10px;
+    }
+    .nav-item .nav-icon { font-size: 20px; }
+    .nav-item span { display: block; font-size: 10px; }
+    /* 동기화 상태를 탭바 오른쪽에 배치 */
+    .sync-status {
+      display: flex; flex-direction: row;
+      align-items: center; gap: 6px;
+      margin-top: 0; padding: 0 12px;
+      border-top: none; border-left: 1px solid var(--border);
+      min-width: 70px;
+    }
+    .sync-status > div { display: flex; align-items: center; }
+    .sync-text { display: none; }
+    .sync-btn {
+      display: none;
+    }
+    /* 동기화 점만 보이게 */
+    #syncDot { width: 9px; height: 9px; margin: 0; }
+
+    /* ── 메인 영역 ── */
+    .main {
+      margin-left: 0 !important;
+      padding: 16px 14px 80px; /* 하단 탭바 높이만큼 여백 */
+    }
+
+    /* ── 입력폼 ── */
+    .input-card { padding: 16px; }
+    .input-row {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .input-group { flex: 1 1 calc(50% - 5px); min-width: 120px; }
+    .memo-input { flex: 1 1 100%; }
+    .add-btn { width: 100%; padding: 13px; }
+
+    /* ── 누적합계 ── */
+    .summary-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .s-value { font-size: 12px; }
+
+    /* ── 건별 내역 헤더 ── */
+    .records-header { flex-wrap: wrap; gap: 8px; }
+    .data-btns { flex-wrap: wrap; gap: 6px; }
+    .export-btn, .import-btn, .clear-btn { font-size: 11px; padding: 4px 8px; }
+
+    /* ── 레코드 카드 ── */
+    .record-body { grid-template-columns: 1fr; gap: 10px; }
+    .record-card-header { flex-wrap: wrap; gap: 6px; }
+
+    /* ── 정산 레이아웃 ── */
+    .settle-layout { grid-template-columns: 1fr; gap: 14px; }
+    .settle-select-list { max-height: 280px; }
+
+    /* ── 페이지 제목 ── */
+    h1 { font-size: 20px; }
+    .subtitle { font-size: 12px; margin-bottom: 18px; }
   }
 
   /* ─── Settled items ─── */
