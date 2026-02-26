@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>거래 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --surface2: #f0f3fa;
+    --border: #dde3f0;
+    --accent: #7b8ff7;
+    --accent-soft: #eef0ff;
+    --teal: #4bb8a9;
+    --teal-soft: #e6f7f5;
+    --red: #d97070;
+    --red-soft: #fdf0f0;
+    --text: #2c3350;
+    --muted: #8b93b0;
+    --shadow: 0 2px 12px rgba(100,110,160,0.08);
+    --sidebar-w: 200px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0 24px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    box-shadow: 2px 0 16px rgba(100,110,160,0.07);
+    z-index: 10;
+  }
+
+  .sidebar-logo {
+    padding: 0 20px 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo .logo-title {
+    font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px;
+  }
+  .sidebar-logo .logo-sub {
+    font-size: 11px; color: var(--muted); margin-top: 3px;
+  }
+
+  .sidebar-section-label {
+    font-size: 10px; color: var(--muted); font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    padding: 0 20px 8px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    border-radius: 0;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+    border-left: 3px solid transparent;
+    margin: 1px 0;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    border-left-color: var(--accent);
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* ─── Main ─── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 40px 32px;
+    max-width: 860px;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+
+  /* ─── Input card ─── */
+  .input-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 24px 26px; margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .input-row { display: flex; gap: 12px; align-items: flex-end; }
+  .input-group { flex: 1; }
+  .memo-input { flex: 1.2; }
+
+  label {
+    display: block; font-size: 11px; color: var(--muted);
+    margin-bottom: 7px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 500;
+  }
+  input[type="number"], input[type="text"] {
+    width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 12px 15px; color: var(--text); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  input[type="number"] { font-family: 'DM Mono', monospace; font-size: 15px; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(123,143,247,0.12); }
+  input::placeholder { color: #c2c8dc; }
+  input[type="number"]::-webkit-inner-spin-button { display: none; }
+
+  .add-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 12px 26px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px;
+    font-weight: 700; cursor: pointer; white-space: nowrap;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(123,143,247,0.3);
+  }
+  .add-btn:hover { background: #6a7ef5; transform: translateY(-1px); }
+  .add-btn:active { transform: translateY(0); }
+
+  /* ─── Preview ─── */
+  .preview-card {
+    background: var(--surface); border: 1.5px solid var(--accent);
+    border-radius: 18px; padding: 20px 24px; margin-bottom: 20px;
+    display: none; box-shadow: var(--shadow);
+  }
+  .preview-card.visible { display: block; }
+  .preview-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700; margin-bottom: 14px; }
+
+  /* ─── Summary ─── */
+  .summary-card {
+    background: linear-gradient(135deg, #eef0ff, #e6f7f5);
+    border: 1.5px solid #c5ccf8; border-radius: 18px;
+    padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow);
+  }
+  .summary-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 14px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .s-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .s-value { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; color: var(--text); }
+  .s-key .s-label { color: var(--accent); }
+  .s-key .s-value { color: var(--accent); }
+  .s-red .s-label { color: var(--red); }
+  .s-red .s-value { color: var(--red); }
+
+  /* ─── Records header ─── */
+  .records-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .records-header h2 { font-size: 15px; font-weight: 700; }
+  .clear-btn {
+    background: none; border: 1.5px solid var(--border); color: var(--muted);
+    border-radius: 8px; padding: 6px 14px; font-family: 'Noto Sans KR', sans-serif;
+    font-size: 12px; cursor: pointer; transition: color 0.2s, border-color 0.2s;
+  }
+  .clear-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* ─── Record card ─── */
+  .records-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .record-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; overflow: hidden; box-shadow: var(--shadow);
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .record-card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px; background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  .record-card-meta { display: flex; align-items: center; gap: 10px; }
+  .record-num {
+    background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
+    border-radius: 6px; padding: 2px 8px; font-family: 'DM Mono', monospace;
+  }
+  .record-memo { font-size: 13px; font-weight: 600; color: var(--text); }
+  .record-date { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .record-del-btn {
+    background: none; border: none; color: #c2c8dc; cursor: pointer;
+    font-size: 14px; padding: 4px 8px; border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .record-del-btn:hover { color: var(--red); background: var(--red-soft); }
+
+  .record-body { padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .record-section-title {
+    font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px;
+    font-weight: 700; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid var(--border);
+  }
+  .record-rows { display: flex; flex-direction: column; }
+  .record-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px dashed #eaecf5;
+  }
+  .record-row:last-child { border-bottom: none; }
+  .record-row.rr-accent {
+    background: var(--accent-soft); margin: 1px -6px; padding: 6px 6px;
+    border-radius: 6px; border-bottom: none;
+  }
+  .record-row.rr-red {
+    background: var(--red-soft); margin: 1px -6px; padding: 6px 6px;
+    border-radius: 6px; border-bottom: none;
+  }
+  .row-label { font-size: 12px; color: var(--muted); }
+  .rr-accent .row-label { color: var(--accent); font-weight: 600; }
+  .rr-red    .row-label { color: var(--red);    font-weight: 600; }
+  .row-value { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); }
+  .row-value.rv-accent { color: var(--accent); font-weight: 700; }
+  .row-value.rv-teal   { color: var(--teal);   font-weight: 600; }
+  .row-value.rv-red    { color: var(--red);    font-weight: 700; }
+
+  /* ─── Settlement page ─── */
+  .settle-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; position: relative; }
+
+  .settle-select-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .settle-select-header {
+    padding: 14px 20px; background: var(--surface2); border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .settle-select-header h3 { font-size: 13px; font-weight: 700; }
+  .select-all-btn {
+    font-size: 11px; color: var(--accent); cursor: pointer; font-weight: 600;
+    background: none; border: none; font-family: 'Noto Sans KR', sans-serif;
+  }
+  .settle-select-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; }
+
+  .settle-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    border: 1.5px solid var(--border); background: var(--surface2);
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .settle-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .settle-item.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .settle-item.selected .settle-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .settle-check {
+    width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0; transition: all 0.15s;
+    color: transparent;
+  }
+  .settle-item-info { flex: 1; min-width: 0; }
+  .settle-item-memo { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .settle-item-amount { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+  .settle-item-num {
+    font-size: 10px; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 4px; padding: 1px 5px;
+    font-family: 'DM Mono', monospace; flex-shrink: 0;
+  }
+
+  /* 정산 결과 카드 */
+  .settle-result-wrap { }
+
+  .settle-result-card {
+    background: var(--surface); border: 1.5px solid var(--accent);
+    border-radius: 18px; overflow: visible; box-shadow: var(--shadow);
+  }
+  .settle-result-header {
+    padding: 14px 20px; background: var(--accent-soft); border-bottom: 1px solid #c5ccf8;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .settle-result-header h3 { font-size: 13px; font-weight: 700; color: var(--accent); }
+  .settle-count {
+    font-size: 11px; background: var(--accent); color: #fff;
+    border-radius: 10px; padding: 2px 8px; font-family: 'DM Mono', monospace; font-weight: 700;
+  }
+
+  .settle-empty {
+    padding: 40px 20px; text-align: center; color: var(--muted); font-size: 13px;
+  }
+  .settle-empty-icon { font-size: 28px; margin-bottom: 8px; }
+
+  .empty-msg {
+    padding: 56px; text-align: center; color: var(--muted); font-size: 14px;
+    background: var(--surface); border: 1.5px dashed var(--border); border-radius: 18px;
+  }
+
+  @media (max-width: 700px) {
+    .sidebar { width: 60px; }
+    .sidebar-logo, .sidebar-section-label, .nav-item span { display: none; }
+    .nav-item { justify-content: center; padding: 12px; }
+    .main { margin-left: 60px; padding: 24px 16px; }
+    .settle-layout { grid-template-columns: 1fr; }
+    .record-body { grid-template-columns: 1fr; gap: 12px; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ─── Settled items ─── */
+  .settle-section-divider {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--muted); padding: 10px 12px 6px; border-top: 1px solid var(--border); margin-top: 6px;
+  }
+  .settle-section-divider:first-child { border-top: none; margin-top: 0; }
+
+  .settle-item.done {
+    background: #f8faf8; border-color: #c8e6c9; opacity: 0.75;
+    cursor: default;
+  }
+  .settle-item.done:hover { background: #f8faf8; border-color: #c8e6c9; }
+  .settle-item.done .settle-check { background: #5daa85; border-color: #5daa85; color: #fff; }
+  .settle-item.done .settle-item-memo { color: var(--muted); text-decoration: line-through; }
+  .settle-badge-done {
+    font-size: 10px; background: #e8f5e9; color: #5daa85; border-radius: 4px;
+    padding: 1px 6px; font-weight: 700; flex-shrink: 0; font-family: 'DM Mono', monospace;
+  }
+  .settle-badge-date {
+    font-size: 10px; color: #5daa85; font-family: 'DM Mono', monospace;
+  }
+
+  /* 정산완료 버튼 */
+  .settle-complete-btn {
+    width: 100%; margin: 0; padding: 13px;
+    background: var(--teal); color: #fff; border: none; border-radius: 0 0 16px 16px;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .settle-complete-btn:hover { background: #3ca898; }
+  .settle-complete-btn:disabled { background: #c0d8d5; cursor: not-allowed; }
+
+  /* 정산완료 날짜 입력 모달 */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(44,51,80,0.35); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border-radius: 20px; padding: 28px 28px 24px;
+    box-shadow: 0 8px 40px rgba(44,51,80,0.18); min-width: 320px;
+    animation: fadeIn 0.18s ease;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+  .modal-field { margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+  .modal-confirm-btn {
+    flex: 1; padding: 11px; background: var(--teal); color: #fff; border: none;
+    border-radius: 10px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px;
+    font-weight: 700; cursor: pointer; transition: background 0.2s;
+  }
+  .modal-confirm-btn:hover { background: #3ca898; }
+  .modal-cancel-btn {
+    flex: 1; padding: 11px; background: var(--surface2); color: var(--muted);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 14px; cursor: pointer;
+  }
+
+  /* 정산완료 내역 섹션 */
+  .settled-history { margin-top: 24px; }
+  .settled-history-title {
+    font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .settled-group {
+    background: var(--surface); border: 1px solid #c8e6c9; border-radius: 14px;
+    margin-bottom: 10px; box-shadow: var(--shadow);
+  }
+  .settled-group-header {
+    background: #e8f5e9; padding: 11px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #c8e6c9;
+  }
+  .settled-group-date { font-size: 12px; font-weight: 700; color: #5daa85; }
+  .settled-group-count { font-size: 11px; color: #5daa85; background: #fff; border-radius: 10px; padding: 2px 8px; }
+  .settled-group-body { padding: 12px 16px; }
+  .settled-group-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .settled-tag {
+    font-size: 10px; background: #e8f5e9; color: #5daa85;
+    border-radius: 4px; padding: 2px 6px; font-weight: 600;
+  }
+  .settled-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .settled-summary-item .ss-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+  .settled-summary-item .ss-value { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
+  .settled-summary-item.ss-key .ss-value { color: var(--accent); }
+  .settled-summary-item.ss-red .ss-value { color: var(--red); }
+  .undo-btn {
+    font-size: 11px; color: var(--muted); cursor: pointer; background: none;
+    border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px;
+    font-family: 'Noto Sans KR', sans-serif; transition: all 0.2s;
+  }
+  .undo-btn:hover { color: var(--red); border-color: var(--red); }
+  .undo-btn.confirming { color: #fff; background: var(--red); border-color: var(--red); font-weight: 700; }
+  .undo-cancel-btn {
+    font-size: 11px; color: var(--muted); cursor: pointer; background: none;
+    border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px;
+    font-family: 'Noto Sans KR', sans-serif; transition: all 0.2s; margin-left: 4px;
+  }
+
+
+  /* ─── 내보내기/가져오기 ─── */
+  .data-btns { display: flex; gap: 8px; align-items: center; }
+  .export-btn {
+    font-size: 12px; color: var(--accent); cursor: pointer; background: var(--accent-soft);
+    border: 1.5px solid #c5ccf8; border-radius: 8px; padding: 5px 12px;
+    font-family: 'Noto Sans KR', sans-serif; font-weight: 600; transition: all 0.2s;
+  }
+  .export-btn:hover { background: #e0e3fd; }
+  .import-btn {
+    font-size: 12px; color: var(--teal); cursor: pointer; background: var(--teal-soft);
+    border: 1.5px solid #aaddd7; border-radius: 8px; padding: 5px 12px;
+    font-family: 'Noto Sans KR', sans-serif; font-weight: 600; transition: all 0.2s;
+  }
+  .import-btn:hover { background: #d0efec; }
+  .import-file-input { display: none; }
+
+  /* ─── 내보내기 모달 ─── */
+  .export-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(44,51,80,0.35); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .export-modal-overlay.open { display: flex; }
+  .export-modal-box {
+    background: var(--surface); border-radius: 20px; padding: 24px 24px 20px;
+    box-shadow: 0 8px 40px rgba(44,51,80,0.18); width: 90%; max-width: 520px;
+    animation: fadeIn 0.18s ease;
+  }
+  .export-modal-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .export-modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .export-textarea {
+    width: 100%; height: 200px; background: var(--surface2);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 12px; font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--text); resize: none; outline: none;
+  }
+  .export-modal-actions { display: flex; gap: 10px; margin-top: 12px; }
+  .copy-btn {
+    flex: 1; padding: 11px; background: var(--accent); color: #fff; border: none;
+    border-radius: 10px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px;
+    font-weight: 700; cursor: pointer; transition: background 0.2s;
+  }
+  .copy-btn:hover { background: #6a7ef5; }
+  .copy-btn.copied { background: var(--teal); }
+  .export-close-btn {
+    flex: 1; padding: 11px; background: var(--surface2); color: var(--muted);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 14px; cursor: pointer;
+  }
+  /* 가져오기도 텍스트 붙여넣기로 */
+  .import-paste-area {
+    width: 100%; height: 160px; background: var(--surface2);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 12px; font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--text); resize: none; outline: none; margin-top: 10px;
+  }
+  .import-paste-area:focus { border-color: var(--teal); }
+
+  /* ─── Supabase 동기화 상태 ─── */
+  .sync-status {
+    margin-top: auto; padding: 14px 20px 0;
+    border-top: 1px solid var(--border);
+  }
+  .sync-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; margin-right: 6px; vertical-align: middle;
+    background: #c2c8dc;
+  }
+  .sync-dot.ok   { background: #5daa85; }
+  .sync-dot.err  { background: var(--red); }
+  .sync-dot.busy { background: #f5a623; animation: pulse 1s infinite; }
+  .sync-text { font-size: 11px; color: var(--muted); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .sync-btn {
+    display: block; width: 100%; margin-top: 8px;
+    font-size: 11px; color: var(--accent); cursor: pointer;
+    background: var(--accent-soft); border: 1.5px solid #c5ccf8;
+    border-radius: 7px; padding: 5px 0; text-align: center;
+    font-family: 'Noto Sans KR', sans-serif; font-weight: 600;
+    transition: background 0.2s;
+  }
+  .sync-btn:hover { background: #e0e3fd; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-title">거래 계산기</div>
+    <div class="logo-sub">세금 자동 계산</div>
+  </div>
+  <div class="sidebar-section-label">메뉴</div>
+  <div class="nav-item active" onclick="showPage('page-calc')" id="nav-calc">
+    <span class="nav-icon">🧮</span>
+    <span>거래 계산</span>
+  </div>
+  <div class="nav-item" onclick="showPage('page-settle')" id="nav-settle">
+    <span class="nav-icon">📋</span>
+    <span>정산</span>
+  </div>
+  <div class="sync-status">
+    <div>
+      <span class="sync-dot" id="syncDot"></span>
+      <span class="sync-text" id="syncText">연결 중...</span>
+    </div>
+    <button class="sync-btn" onclick="syncFromDB()">☁️ 불러오기</button>
+    <button class="sync-btn" style="margin-top:4px;background:var(--teal-soft);border-color:#aaddd7;color:var(--teal)" onclick="syncToDB()">💾 저장하기</button>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- ════ 거래 계산 페이지 ════ -->
+  <div class="page active" id="page-calc">
+    <h1>거래 계산</h1>
+    <p class="subtitle">예약금액 입력 시 세금 자동 계산 · 건별 누적 관리</p>
+
+    <div class="input-card">
+      <div class="input-row">
+        <div class="input-group">
+          <label>예약금액 (원)</label>
+          <input type="number" id="amountInput" placeholder="8,345,000" />
+        </div>
+        <div class="input-group">
+          <label>거래 날짜</label>
+          <input type="date" id="tradeDateInput" />
+        </div>
+        <div class="input-group memo-input">
+          <label>메모 (선택)</label>
+          <input type="text" id="memoInput" placeholder="예) 3월 예약건" />
+        </div>
+        <button class="add-btn" onclick="addRecord()">추가</button>
+      </div>
+    </div>
+
+    <div class="preview-card" id="previewCard">
+      <div class="preview-title">미리보기 계산 결과</div>
+      <div class="record-body" style="padding:0" id="previewGrid"></div>
+    </div>
+
+    <div class="summary-card" id="summaryCard" style="display:none">
+      <div class="summary-title">📊 누적 합계</div>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="records-header">
+      <h2>건별 내역</h2>
+      <div class="data-btns">
+        <button class="import-btn" onclick="openImportModal()">📂 가져오기</button>
+        <button class="export-btn" onclick="openExportModal()">💾 내보내기</button>
+        <button class="clear-btn" onclick="clearAll()">전체 삭제</button>
+      </div>
+    </div>
+    <div id="tableArea">
+      <div class="empty-msg">아직 추가된 내역이 없습니다</div>
+    </div>
+  </div>
+
+  <!-- ════ 정산 페이지 ════ -->
+  <div class="page" id="page-settle">
+    <h1>정산</h1>
+    <p class="subtitle">건별 내역을 선택하면 합산 결과를 자동으로 계산합니다</p>
+
+    <div class="settle-layout">
+      <!-- 좌: 건 선택 -->
+      <div class="settle-select-card">
+        <div class="settle-select-header">
+          <h3>예약건 선택</h3>
+          <button class="select-all-btn" onclick="toggleSelectAll()">전체 선택</button>
+        </div>
+        <div class="settle-select-list" id="settleList">
+          <div class="empty-msg" style="padding:32px;border:none;background:none;font-size:13px">
+            거래 계산 탭에서 먼저 예약건을 추가해주세요
+          </div>
+        </div>
+      </div>
+
+      <!-- 우: 합산 결과 -->
+      <div class="settle-result-wrap">
+        <div class="settle-result-card">
+          <div class="settle-result-header">
+            <h3>합산 정산 결과</h3>
+            <span class="settle-count" id="settleCount">0건</span>
+          </div>
+          <div id="settleResult">
+            <div class="settle-empty">
+              <div class="settle-empty-icon">☝️</div>
+              <div>좌측에서 예약건을 선택해주세요</div>
+            </div>
+          </div>
+          <button class="settle-complete-btn" id="settleCompleteBtn" onclick="openSettleModal()" disabled>
+            ✅ 정산 완료 처리
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 정산완료 내역 (레이아웃 밖, z-index 문제 없음) -->
+    <div class="settled-history" id="settledHistory" style="display:none;margin-top:24px">
+      <div class="settled-history-title">
+        <span>✅ 정산 완료 내역</span>
+      </div>
+      <div id="settledGroupList"></div>
+    </div>
+  </div>
+
+
+<!-- 정산완료 모달 -->
+<div class="modal-overlay" id="settleModal">
+  <div class="modal-box">
+    <div class="modal-title">정산 완료 처리</div>
+    <div class="modal-sub" id="modalSubText">선택한 예약건을 정산 완료로 표시합니다</div>
+    <div class="modal-field">
+      <label>정산 날짜</label>
+      <input type="date" id="settleDateInput" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeModal()">취소</button>
+      <button class="modal-confirm-btn" onclick="confirmSettle()">정산 완료</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 내보내기 모달 -->
+<div class="export-modal-overlay" id="exportModal">
+  <div class="export-modal-box">
+    <div class="export-modal-title">💾 데이터 내보내기</div>
+    <div class="export-modal-sub">아래 텍스트를 전체 선택(Ctrl+A) 후 복사해서 메모장 등에 저장하세요.<br>바탕화면에서 열 때 가져오기로 붙여넣으면 됩니다.</div>
+    <textarea class="export-textarea" id="exportTextarea" readonly></textarea>
+    <div class="export-modal-actions">
+      <button class="copy-btn" id="copyBtn" onclick="copyExportData()">📋 전체 복사</button>
+      <button class="export-close-btn" onclick="closeExportModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 가져오기 모달 -->
+<div class="export-modal-overlay" id="importModal">
+  <div class="export-modal-box">
+    <div class="export-modal-title">📂 데이터 가져오기</div>
+    <div class="export-modal-sub">내보낸 텍스트를 아래에 붙여넣고 가져오기를 누르세요.</div>
+    <textarea class="import-paste-area" id="importTextarea" placeholder="여기에 붙여넣기..."></textarea>
+    <div class="export-modal-actions">
+      <button class="copy-btn" onclick="importFromText()">📂 가져오기</button>
+      <button class="export-close-btn" onclick="closeImportModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+  /* ── Supabase 설정 (순수 REST API, 외부 라이브러리 없음) ── */
+  const SUPABASE_URL = 'https://oellhnsezsfxzeezhsuk.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lbGxobnNlenNmeHplZXpoc3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwODUzMTQsImV4cCI6MjA4NzY2MTMxNH0.k_g7T0pUqiM2utS6y_f3m7PYe4-GHjJsKTYKIbkNywY';
+  const DB_ROW_ID = 'main';
+  const SB_HEADERS = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY
+  };
+  const SB_TABLE_URL = SUPABASE_URL + '/rest/v1/tax_records';
+
+  let records = JSON.parse(localStorage.getItem('taxRecords') || '[]');
+  let settlements = JSON.parse(localStorage.getItem('taxSettlements') || '[]');
+  let selectedIndices = new Set();
+
+  /* ── 동기화 상태 표시 ── */
+  function setSyncStatus(state, msg) {
+    const dot = document.getElementById('syncDot');
+    const txt = document.getElementById('syncText');
+    if (!dot) return;
+    dot.className = 'sync-dot ' + state;
+    txt.textContent = msg;
+  }
+
+  /* ── DB 저장 (REST API) ── */
+  async function syncToDB() {
+    setSyncStatus('busy', '저장 중...');
+    try {
+      const payload = { id: DB_ROW_ID, data: { records, settlements } };
+      const res = await fetch(SB_TABLE_URL, {
+        method: 'POST',
+        headers: { ...SB_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err);
+      }
+      save();
+      setSyncStatus('ok', '저장 완료 ✓');
+      setTimeout(() => setSyncStatus('ok', '동기화됨'), 2000);
+    } catch(e) {
+      setSyncStatus('err', '저장 실패');
+      console.error('syncToDB error:', e);
+    }
+  }
+
+  /* ── DB 불러오기 (REST API) ── */
+  async function syncFromDB() {
+    setSyncStatus('busy', '불러오는 중...');
+    try {
+      const res = await fetch(
+        SB_TABLE_URL + '?id=eq.' + DB_ROW_ID + '&select=data',
+        { headers: SB_HEADERS }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const rows = await res.json();
+      if (rows.length > 0 && rows[0].data) {
+        records = rows[0].data.records || [];
+        settlements = rows[0].data.settlements || [];
+        save();
+        render();
+        if (document.getElementById('page-settle').classList.contains('active')) renderSettle();
+      }
+      setSyncStatus('ok', '동기화됨');
+    } catch(e) {
+      setSyncStatus('err', '불러오기 실패');
+      console.error('syncFromDB error:', e);
+    }
+  }
+
+  /* ── 앱 시작 시 자동으로 DB에서 불러오기 ── */
+  async function initDB() {
+    setSyncStatus('busy', '연결 중...');
+    try {
+      const res = await fetch(SB_TABLE_URL + '?select=id&limit=1', { headers: SB_HEADERS });
+      if (!res.ok) throw new Error(await res.text());
+      await syncFromDB();
+    } catch(e) {
+      setSyncStatus('err', '오프라인 모드');
+      console.warn('Supabase 연결 실패, 로컬 데이터 사용:', e.message);
+    }
+  }
+
+  /* ── utils ── */
+  function roundK(n) { return Math.round(n / 1000) * 1000; }
+
+  function calc(amount) {
+    const profit    = Math.round(amount * 0.1);
+    const payment   = amount + profit;
+    const income    = roundK(payment * 1000 / 967);
+    const expense   = Math.round(income * 0.6);
+    const incomeAmt = income - expense;
+    const taxAmt    = Math.round(incomeAmt * 0.264);
+    const prepaid   = Math.round(income * 0.033);
+    const extra     = taxAmt - prepaid;
+    return { amount, profit, payment, income, expense, incomeAmt, taxAmt, prepaid, extra };
+  }
+
+  function fmt(n) { return n.toLocaleString('ko-KR') + '원'; }
+
+  /* ── Nav ── */
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    const navId = pageId === 'page-calc' ? 'nav-calc' : 'nav-settle';
+    document.getElementById(navId).classList.add('active');
+    if (pageId === 'page-settle') renderSettle();
+  }
+
+  /* ── Preview ── */
+  document.getElementById('amountInput').addEventListener('input', function () {
+    const v = parseInt(this.value);
+    const card = document.getElementById('previewCard');
+    if (!v || v <= 0) { card.classList.remove('visible'); return; }
+    const c = calc(v);
+    card.classList.add('visible');
+    document.getElementById('previewGrid').innerHTML = `
+      <div>
+        <div class="record-section-title">지급 내역</div>
+        <div class="record-rows">
+          <div class="record-row rr-accent">
+            <span class="row-label">예약금액</span>
+            <span class="row-value rv-accent">${fmt(c.amount)}</span>
+          </div>
+          <div class="record-row rr-accent">
+            <span class="row-label">이윤 (10%)</span>
+            <span class="row-value rv-accent">${fmt(c.profit)}</span>
+          </div>
+          <div class="record-row">
+            <span class="row-label">차인지급액</span>
+            <span class="row-value rv-teal">${fmt(c.payment)}</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="record-section-title">세금 계산</div>
+        <div class="record-rows">
+          <div class="record-row">
+            <span class="row-label">사업소득 (역산)</span>
+            <span class="row-value">${fmt(c.income)}</span>
+          </div>
+          <div class="record-row">
+            <span class="row-label">필요경비 (60%)</span>
+            <span class="row-value">${fmt(c.expense)}</span>
+          </div>
+          <div class="record-row">
+            <span class="row-label">사업소득금액</span>
+            <span class="row-value">${fmt(c.incomeAmt)}</span>
+          </div>
+          <div class="record-row">
+            <span class="row-label">결정세액 (26.4%)</span>
+            <span class="row-value">${fmt(c.taxAmt)}</span>
+          </div>
+          <div class="record-row">
+            <span class="row-label">기납부세액 (3.3%)</span>
+            <span class="row-value">${fmt(c.prepaid)}</span>
+          </div>
+          <div class="record-row rr-red">
+            <span class="row-label">추가납부세액</span>
+            <span class="row-value rv-red">${fmt(c.extra)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  /* ── Add / Delete ── */
+  function addRecord() {
+    const v = parseInt(document.getElementById('amountInput').value);
+    if (!v || v <= 0) { alert('예약금액을 입력해주세요.'); return; }
+    const memo = document.getElementById('memoInput').value || '-';
+    const tradeDateRaw = document.getElementById('tradeDateInput').value;
+    const tradeDate = tradeDateRaw ? new Date(tradeDateRaw).toLocaleDateString('ko-KR') : '-';
+    const c = calc(v);
+    records.push({ memo, tradeDate, ...c, date: new Date().toLocaleDateString('ko-KR') });
+    saveAndSync(); render();
+    document.getElementById('amountInput').value = '';
+    document.getElementById('memoInput').value = '';
+    document.getElementById('tradeDateInput').value = '';
+    document.getElementById('previewCard').classList.remove('visible');
+  }
+
+  function deleteRecord(i) {
+    selectedIndices.delete(i);
+    // re-map indices after deletion
+    const newSel = new Set();
+    selectedIndices.forEach(idx => { if (idx > i) newSel.add(idx - 1); else if (idx < i) newSel.add(idx); });
+    selectedIndices = newSel;
+    records.splice(i, 1);
+    saveAndSync(); render();
+  }
+
+  function clearAll() {
+    if (!records.length) return;
+    records = []; selectedIndices.clear(); settlements = []; saveAndSync(); render();
+  }
+
+  function save() {
+    localStorage.setItem('taxRecords', JSON.stringify(records));
+    localStorage.setItem('taxSettlements', JSON.stringify(settlements));
+  }
+
+  /* 데이터 변경 후 DB에도 자동 저장 (디바운스 1.5초) */
+  let _saveTimer = null;
+  function saveAndSync() {
+    save();
+    clearTimeout(_saveTimer);
+    setSyncStatus('busy', '저장 중...');
+    _saveTimer = setTimeout(() => syncToDB(), 1500);
+  }
+
+  /* ── Render calc page ── */
+  function render() {
+    const area = document.getElementById('tableArea');
+    const summaryCard = document.getElementById('summaryCard');
+
+    if (!records.length) {
+      area.innerHTML = '<div class="empty-msg">아직 추가된 내역이 없습니다</div>';
+      summaryCard.style.display = 'none';
+      return;
+    }
+
+    const tot = records.reduce((a, r) => ({
+      amount:  a.amount  + r.amount,
+      profit:  a.profit  + r.profit,
+      payment: a.payment + r.payment,
+      extra:   a.extra   + r.extra,
+    }), { amount: 0, profit: 0, payment: 0, extra: 0 });
+
+    summaryCard.style.display = 'block';
+    document.getElementById('summaryGrid').innerHTML = `
+      <div class="summary-item s-key"><div class="s-label">★ 총 예약금액</div><div class="s-value">${fmt(tot.amount)}</div></div>
+      <div class="summary-item s-key"><div class="s-label">★ 총 이윤</div><div class="s-value">${fmt(tot.profit)}</div></div>
+      <div class="summary-item"><div class="s-label">총 차인지급액</div><div class="s-value">${fmt(tot.payment)}</div></div>
+      <div class="summary-item s-red"><div class="s-label">★ 총 추가납부세액</div><div class="s-value">${fmt(tot.extra)}</div></div>
+    `;
+
+    const cards = records.map((r, i) => `
+      <div class="record-card">
+        <div class="record-card-header">
+          <div class="record-card-meta">
+            <span class="record-num">#${i + 1}</span>
+            <span class="record-memo">${r.memo}</span>
+            ${r.tradeDate && r.tradeDate !== '-' ? `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${r.tradeDate}</span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="record-date">${r.date}</span>
+            <button class="record-del-btn" onclick="deleteRecord(${i})">✕</button>
+          </div>
+        </div>
+        <div class="record-body">
+          <div>
+            <div class="record-section-title">지급 내역</div>
+            <div class="record-rows">
+              <div class="record-row rr-accent">
+                <span class="row-label">예약금액</span>
+                <span class="row-value rv-accent">${fmt(r.amount)}</span>
+              </div>
+              <div class="record-row rr-accent">
+                <span class="row-label">이윤 (10%)</span>
+                <span class="row-value rv-accent">${fmt(r.profit)}</span>
+              </div>
+              <div class="record-row">
+                <span class="row-label">차인지급액</span>
+                <span class="row-value rv-teal">${fmt(r.payment)}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="record-section-title">세금 계산</div>
+            <div class="record-rows">
+              <div class="record-row">
+                <span class="row-label">사업소득 (역산)</span>
+                <span class="row-value">${fmt(r.income)}</span>
+              </div>
+              <div class="record-row">
+                <span class="row-label">필요경비 (60%)</span>
+                <span class="row-value">${fmt(r.expense)}</span>
+              </div>
+              <div class="record-row">
+                <span class="row-label">사업소득금액</span>
+                <span class="row-value">${fmt(r.incomeAmt)}</span>
+              </div>
+              <div class="record-row">
+                <span class="row-label">결정세액 (26.4%)</span>
+                <span class="row-value">${fmt(r.taxAmt)}</span>
+              </div>
+              <div class="record-row">
+                <span class="row-label">기납부세액 (3.3%)</span>
+                <span class="row-value">${fmt(r.prepaid)}</span>
+              </div>
+              <div class="record-row rr-red">
+                <span class="row-label">추가납부세액</span>
+                <span class="row-value rv-red">${fmt(r.extra)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    area.innerHTML = `<div class="records-list">${cards}</div>`;
+  }
+
+  /* ── Settlement page ── */
+  function toggleSelectItem(i) {
+    if (selectedIndices.has(i)) selectedIndices.delete(i);
+    else selectedIndices.add(i);
+    renderSettle();
+  }
+
+  function toggleSelectAll() {
+    const unsettled = records.map((r,i)=>i).filter(i => !isSettled(i));
+    const allSelected = unsettled.every(i => selectedIndices.has(i));
+    if (allSelected) {
+      unsettled.forEach(i => selectedIndices.delete(i));
+    } else {
+      unsettled.forEach(i => selectedIndices.add(i));
+    }
+    renderSettle();
+  }
+
+  function isSettled(i) {
+    return settlements.some(s => s.recordIndices.includes(i));
+  }
+
+  function openSettleModal() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    document.getElementById('settleDateInput').value = `${yyyy}-${mm}-${dd}`;
+    const count = selectedIndices.size;
+    document.getElementById('modalSubText').textContent = `선택한 ${count}건을 정산 완료로 표시합니다`;
+    document.getElementById('settleModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('settleModal').classList.remove('open');
+  }
+
+  function confirmSettle() {
+    const dateVal = document.getElementById('settleDateInput').value;
+    if (!dateVal) { alert('정산 날짜를 선택해주세요.'); return; }
+    const settleDate = new Date(dateVal).toLocaleDateString('ko-KR');
+    const indices = [...selectedIndices].sort((a,b)=>a-b);
+    const totalAmount = indices.reduce((s,i) => s + records[i].amount, 0);
+    const result = calc(totalAmount);
+    settlements.push({ date: settleDate, recordIndices: indices, result });
+    saveAndSync();
+    selectedIndices.clear();
+    closeModal();
+    renderSettle();
+  }
+
+  function undoSettlement(sIdx) {
+    settlements.splice(sIdx, 1);
+    saveAndSync();
+    renderSettle();
+  }
+
+  // 이벤트 위임: 취소 버튼 two-step 확인
+  document.addEventListener('click', function(e) {
+    // 취소 확인 버튼 (두번째 클릭)
+    const confirmBtn = e.target.closest('[data-undo-confirm]');
+    if (confirmBtn) {
+      const sIdx = parseInt(confirmBtn.getAttribute('data-undo-confirm'));
+      undoSettlement(sIdx);
+      return;
+    }
+    // 취소 취소 버튼 (되돌리기)
+    const cancelBtn = e.target.closest('[data-undo-cancel]');
+    if (cancelBtn) {
+      renderSettle();
+      return;
+    }
+    // 첫번째 클릭: 확인 상태로 전환
+    const btn = e.target.closest('[data-undo]');
+    if (!btn) return;
+    const sIdx = parseInt(btn.getAttribute('data-undo'));
+    // 버튼을 확인 요청 상태로 교체
+    const wrap = btn.parentElement;
+    btn.outerHTML = `<button class="undo-btn confirming" data-undo-confirm="${sIdx}">정말 취소?</button><button class="undo-cancel-btn" data-undo-cancel="1">아니오</button>`;
+  });
+
+  function renderSettle() {
+    const listEl = document.getElementById('settleList');
+    const resultEl = document.getElementById('settleResult');
+    const countEl = document.getElementById('settleCount');
+    const completeBtn = document.getElementById('settleCompleteBtn');
+    const historyEl = document.getElementById('settledHistory');
+    const groupListEl = document.getElementById('settledGroupList');
+
+    if (!records.length) {
+      listEl.innerHTML = `<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">거래 계산 탭에서 먼저 예약건을 추가해주세요</div>`;
+      resultEl.innerHTML = `<div class="settle-empty"><div class="settle-empty-icon">☝️</div><div>좌측에서 예약건을 선택해주세요</div></div>`;
+      countEl.textContent = '0건';
+      completeBtn.disabled = true;
+      historyEl.style.display = 'none';
+      return;
+    }
+
+    // 정산 안된 것 / 된 것 분리
+    const unsettled = records.map((r,i)=>i).filter(i => !isSettled(i));
+    const settled   = records.map((r,i)=>i).filter(i =>  isSettled(i));
+
+    // ── 좌: 선택 리스트
+    let listHTML = '';
+    if (unsettled.length) {
+      listHTML += `<div class="settle-section-divider">미정산 · ${unsettled.length}건</div>`;
+      listHTML += unsettled.map(i => {
+        const r = records[i];
+        const sel = selectedIndices.has(i);
+        return `
+          <div class="settle-item ${sel ? 'selected' : ''}" onclick="toggleSelectItem(${i})">
+            <div class="settle-check">${sel ? '✓' : ''}</div>
+            <div class="settle-item-info">
+              <div class="settle-item-memo">${r.memo}</div>
+              <div class="settle-item-amount">${fmt(r.amount)}${r.tradeDate && r.tradeDate !== '-' ? ' · ' + r.tradeDate : ''}</div>
+            </div>
+            <span class="settle-item-num">#${i + 1}</span>
+          </div>`;
+      }).join('');
+    } else {
+      listHTML += `<div style="padding:20px 12px;text-align:center;color:var(--muted);font-size:12px">미정산 건이 없습니다</div>`;
+    }
+
+    if (settled.length) {
+      listHTML += `<div class="settle-section-divider">정산 완료 · ${settled.length}건</div>`;
+      listHTML += settled.map(i => {
+        const r = records[i];
+        const s = settlements.find(s => s.recordIndices.includes(i));
+        return `
+          <div class="settle-item done">
+            <div class="settle-check">✓</div>
+            <div class="settle-item-info">
+              <div class="settle-item-memo">${r.memo}</div>
+              <div class="settle-item-amount">${fmt(r.amount)}${r.tradeDate && r.tradeDate !== '-' ? ' · ' + r.tradeDate : ''}</div>
+            </div>
+            <span class="settle-badge-date">${s ? s.date : ''}</span>
+          </div>`;
+      }).join('');
+    }
+
+    listEl.innerHTML = listHTML;
+
+    // ── 우: 합산 결과
+    countEl.textContent = `${selectedIndices.size}건`;
+    completeBtn.disabled = selectedIndices.size === 0;
+
+    if (selectedIndices.size === 0) {
+      resultEl.innerHTML = `<div class="settle-empty"><div class="settle-empty-icon">☝️</div><div>미정산 건을 선택해주세요</div></div>`;
+    } else {
+      const totalAmount = [...selectedIndices].reduce((sum, i) => sum + records[i].amount, 0);
+      const s = calc(totalAmount);
+      const selectedTags = [...selectedIndices].sort((a,b)=>a-b)
+        .map(i => `<span style="font-size:10px;background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:2px 6px;font-weight:700">#${i+1} ${records[i].memo}</span>`)
+        .join(' ');
+      resultEl.innerHTML = `
+        <div style="padding:14px 20px 10px;border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">선택된 예약건</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${selectedTags}</div>
+        </div>
+        <div class="record-body">
+          <div>
+            <div class="record-section-title">지급 내역</div>
+            <div class="record-rows">
+              <div class="record-row rr-accent"><span class="row-label">예약금액</span><span class="row-value rv-accent">${fmt(s.amount)}</span></div>
+              <div class="record-row rr-accent"><span class="row-label">이윤 (10%)</span><span class="row-value rv-accent">${fmt(s.profit)}</span></div>
+              <div class="record-row"><span class="row-label">차인지급액</span><span class="row-value rv-teal">${fmt(s.payment)}</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="record-section-title">세금 계산</div>
+            <div class="record-rows">
+              <div class="record-row"><span class="row-label">사업소득 (역산)</span><span class="row-value">${fmt(s.income)}</span></div>
+              <div class="record-row"><span class="row-label">필요경비 (60%)</span><span class="row-value">${fmt(s.expense)}</span></div>
+              <div class="record-row"><span class="row-label">사업소득금액</span><span class="row-value">${fmt(s.incomeAmt)}</span></div>
+              <div class="record-row"><span class="row-label">결정세액 (26.4%)</span><span class="row-value">${fmt(s.taxAmt)}</span></div>
+              <div class="record-row"><span class="row-label">기납부세액 (3.3%)</span><span class="row-value">${fmt(s.prepaid)}</span></div>
+              <div class="record-row rr-red"><span class="row-label">추가납부세액</span><span class="row-value rv-red">${fmt(s.extra)}</span></div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ── 정산완료 내역 그룹
+    if (settlements.length === 0) {
+      historyEl.style.display = 'none';
+      return;
+    }
+    historyEl.style.display = 'block';
+    groupListEl.innerHTML = settlements.map((s, sIdx) => {
+      const tags = s.recordIndices.map(i =>
+        `<span class="settled-tag">#${i+1} ${records[i] ? records[i].memo : '삭제됨'}</span>`
+      ).join('');
+      return `
+        <div class="settled-group">
+          <div class="settled-group-header">
+            <span class="settled-group-date">📅 ${s.date}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="settled-group-count">${s.recordIndices.length}건</span>
+              <button class="undo-btn" data-undo="${sIdx}">취소</button>
+            </div>
+          </div>
+          <div class="settled-group-body">
+            <div class="settled-group-tags">${tags}</div>
+            <div class="settled-summary">
+              <div class="settled-summary-item ss-key"><div class="ss-label">★ 예약금액</div><div class="ss-value">${fmt(s.result.amount)}</div></div>
+              <div class="settled-summary-item ss-key"><div class="ss-label">★ 이윤</div><div class="ss-value">${fmt(s.result.profit)}</div></div>
+              <div class="settled-summary-item"><div class="ss-label">차인지급액</div><div class="ss-value">${fmt(s.result.payment)}</div></div>
+              <div class="settled-summary-item"><div class="ss-label">사업소득</div><div class="ss-value">${fmt(s.result.income)}</div></div>
+              <div class="settled-summary-item"><div class="ss-label">기납부세액</div><div class="ss-value">${fmt(s.result.prepaid)}</div></div>
+              <div class="settled-summary-item ss-red"><div class="ss-label">★ 추가납부세액</div><div class="ss-value">${fmt(s.result.extra)}</div></div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+
+
+
+  /* ── 내보내기 / 가져오기 ── */
+  function openExportModal() {
+    const data = { records, settlements };
+    document.getElementById('exportTextarea').value = JSON.stringify(data, null, 2);
+    document.getElementById('exportModal').classList.add('open');
+  }
+  function closeExportModal() {
+    document.getElementById('exportModal').classList.remove('open');
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '📋 전체 복사'; btn.classList.remove('copied');
+  }
+  function copyExportData() {
+    const ta = document.getElementById('exportTextarea');
+    ta.select();
+    try {
+      document.execCommand('copy');
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 복사 완료!'; btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '📋 전체 복사'; btn.classList.remove('copied'); }, 2000);
+    } catch(e) {}
+  }
+  function openImportModal() {
+    document.getElementById('importTextarea').value = '';
+    document.getElementById('importModal').classList.add('open');
+  }
+  function closeImportModal() {
+    document.getElementById('importModal').classList.remove('open');
+  }
+  function importFromText() {
+    const text = document.getElementById('importTextarea').value.trim();
+    if (!text) return;
+    try {
+      const data = JSON.parse(text);
+      if (data.records) records = data.records;
+      if (data.settlements) settlements = data.settlements;
+      saveAndSync(); render();
+      if (document.getElementById('page-settle').classList.contains('active')) renderSettle();
+      closeImportModal();
+    } catch(err) {
+      document.getElementById('importTextarea').style.borderColor = 'var(--red)';
+      setTimeout(() => { document.getElementById('importTextarea').style.borderColor = ''; }, 1500);
+    }
+  }
+
+  // 오늘 날짜를 거래 날짜 기본값으로
+  (function() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('tradeDateInput').value = `${yyyy}-${mm}-${dd}`;
+  })();
+
+  // DB에서 불러온 후 렌더링 (실패 시 로컬 데이터로 렌더링)
+  render();
+  initDB();
+</script>
+</body>
+</html>
