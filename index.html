@@ -972,17 +972,17 @@
       <div class="summary-item s-red"><div class="s-label">★ 총 추가납부세액</div><div class="s-value">${fmt(tot.extra)}</div></div>
     `;
 
-    const cards = records.map((r, i) => `
+    const cards = [...records].reverse().map((r, i) => { const idx = records.length - 1 - i; return `
       <div class="record-card">
         <div class="record-card-header">
           <div class="record-card-meta">
-            <span class="record-num">#${i + 1}</span>
+            <span class="record-num">#${idx + 1}</span>
             <span class="record-memo">${r.memo}</span>
             ${r.tradeDate && r.tradeDate !== '-' ? `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${r.tradeDate}</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:12px">
             <span class="record-date">${r.date}</span>
-            <button class="record-del-btn" onclick="deleteRecord(${i})">✕</button>
+            <button class="record-del-btn" onclick="deleteRecord(${idx})">✕</button>
           </div>
         </div>
         <div class="record-body">
@@ -1034,7 +1034,7 @@
           </div>
         </div>
       </div>
-    `).join('');
+    `; }).join('');
 
     area.innerHTML = `<div class="records-list">${cards}</div>`;
   }
